@@ -9,8 +9,7 @@ from kondo_b3mservo_rosdriver.msg import Multi_servo_command
 from kondo_b3mservo_rosdriver.msg import Multi_servo_info
 
 # global parameters for general information
-initial_process_flag = 1
-initial_setparam_flag = 1
+initial_process_flag = True
 the_number_of_servo = 0
 
 # global parameters for servo info
@@ -40,6 +39,11 @@ def callback_init(number):
     print(servo_current)
 
 
+def manipulator_initialization():
+    global the_number_of_servo
+    multi_servo_init = Multi_servo_command()
+
+
 # callback function to get informations of servos
 def callback_get_servo_info(multi_servo_info):
     global servo_angle, servo_current
@@ -48,7 +52,7 @@ def callback_get_servo_info(multi_servo_info):
 
 
 # function to control servos
-def control_manipulator(angle, torque):
+def control_manipulator(angle, current):
     global the_number_of_servo
 
     # setup an instance to publish servo command
@@ -57,6 +61,8 @@ def control_manipulator(angle, torque):
     # parameters for motion
     angle_command_slave = 0
     torque_command_slave = 0
+    torque_gain = 10
+    current_dead_zone = 72
 
     # modify command value to avoid over current and other harmful motion
     if angle[0] < 0:
@@ -66,8 +72,13 @@ def control_manipulator(angle, torque):
     else:
         angle_command_slave = angle[0]
 
+    if current[1] > current_dead_zone:
+        torque_command_slave = (current[1] - current_dead_zone) * torque_gain
+    if angle[1] < 0 or angle[1] > 9000 or angle[0] < 0 or angle[0] > 9000:
+        torque_command_slave = 0
+
     # store servo command into the instance of ROS message
-    multi_servo_command.target_torque = [0, 0]
+    multi_servo_command.target_torque = [torque_command_slave, 0]
     multi_servo_command.target_position_by_torque = [0, angle_command_slave]
 
     # publish ROS message to command servos
@@ -88,8 +99,14 @@ if __name__ == '__main__':
 
     while not rospy.is_shutdown():
         try:
-            # control servos based on the information of them
-            control_manipulator(servo_angle, servo_current)
+            # at first loop, set manipulator to initial status
+            if initial_process_flag == True:
+                time.sleep(0.5)
+                manipulator_initialization()
+                initial_process_flag = False
+            else:
+                # control servos based on the information of them
+                control_manipulator(servo_angle, servo_current)
 
         except IOError:
             pass
