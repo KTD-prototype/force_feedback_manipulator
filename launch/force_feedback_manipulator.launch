@@ -2,11 +2,11 @@
 
   <node name="command_generator"   pkg="force_feedback_manipulator" type="command_generator.py" output="screen"/>
   <node name="multi_servo_control" pkg="kondo_b3mservo_rosdriver" type="multi_servo_control.py" output="screen">
-    <rosparam param="servo_id">
+    <rosparam param="param_servo_id">
       <!-- input the pid gain parameters to the list below -->
       [3,4]
     </rosparam>
-    <rosparam param="control_mode">
+    <rosparam param="param_control_mode">
       <!-- input the pid gain parameters to the list below -->
       [8,16]
     </rosparam>
