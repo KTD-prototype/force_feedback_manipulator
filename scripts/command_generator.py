@@ -36,18 +36,24 @@ def callback_init(number):
         target_torque.append(0)
         target_position_by_torque.append(0)
 
-    print(servo_current)
-
 
 def manipulator_initialization():
     global the_number_of_servo
     multi_servo_init = Multi_servo_command()
 
     # generate a command to initialize servo angle
-    multi_servo_init.target_position_by_torque = [0, 0]
+    multi_servo_init.control_mode = [0, 0]
+    multi_servo_init.target_position = [0, 0]
 
     # publisht the command
     multi_servo_command_pub.publish(multi_servo_init)
+
+    # wait for a second
+    time.sleep(1)
+
+    # change servo control mode and publish it
+    # multi_servo_init.control_mode = [8, 16]
+    # multi_servo_command_pub.publish(multi_servo_init)
 
 
 # callback function to get informations of servos
@@ -101,18 +107,18 @@ if __name__ == '__main__':
     multi_servo_command_pub = rospy.Publisher('multi_servo_command',
                                               Multi_servo_command, queue_size=1)
 
+    # at first loop, set manipulator to initial status
+    if initial_process_flag == True:
+        time.sleep(0.5)
+        manipulator_initialization()
+        initial_process_flag = False
+
     rate = rospy.Rate(100)
 
     while not rospy.is_shutdown():
         try:
-            # at first loop, set manipulator to initial status
-            if initial_process_flag == True:
-                time.sleep(0.5)
-                manipulator_initialization()
-                initial_process_flag = False
-            else:
-                # control servos based on the information of them
-                control_manipulator(servo_angle, servo_current)
+            # control servos based on the information of them
+            control_manipulator(servo_angle, servo_current)
 
         except IOError:
             pass
