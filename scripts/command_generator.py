@@ -48,12 +48,17 @@ def manipulator_initialization():
     # publisht the command
     multi_servo_command_pub.publish(multi_servo_init)
 
-    # wait for a second
-    time.sleep(1)
+    # wait for a while
+    time.sleep(0.6)
 
-    # change servo control mode and publish it
-    # multi_servo_init.control_mode = [8, 16]
-    # multi_servo_command_pub.publish(multi_servo_init)
+    # change servo control mode to drive mode and publish it
+    multi_servo_init.control_mode = [8, 16]
+    multi_servo_init.target_torque=[0,0]
+    multi_servo_init.target_position_by_torque=[0,0]
+    multi_servo_command_pub.publish(multi_servo_init)
+
+    # wait for a while
+    time.sleep(0.6)
 
 
 # callback function to get informations of servos
@@ -108,10 +113,11 @@ if __name__ == '__main__':
                                               Multi_servo_command, queue_size=1)
 
     # at first loop, set manipulator to initial status
-    if initial_process_flag == True:
-        time.sleep(0.5)
-        manipulator_initialization()
-        initial_process_flag = False
+    manipulator_initialization()
+    # if initial_process_flag == True:
+    #     time.sleep(0.5)
+    #     manipulator_initialization()
+    #     initial_process_flag = False
 
     rate = rospy.Rate(100)
 
