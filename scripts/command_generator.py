@@ -43,6 +43,12 @@ def manipulator_initialization():
     global the_number_of_servo
     multi_servo_init = Multi_servo_command()
 
+    # generate a command to initialize servo angle
+    multi_servo_init.target_position_by_torque = [0, 0]
+
+    # publisht the command
+    multi_servo_command_pub.publish(multi_servo_init)
+
 
 # callback function to get informations of servos
 def callback_get_servo_info(multi_servo_info):
