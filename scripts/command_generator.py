@@ -44,21 +44,24 @@ def manipulator_initialization():
     # generate a command to initialize servo angle
     multi_servo_init.control_mode = [0, 0]
     multi_servo_init.target_position = [0, 0]
-
+    multi_servo_init.target_torque = [0, 0]
+    multi_servo_init.target_position_by_torque = [0, 0]
     # publisht the command
     multi_servo_command_pub.publish(multi_servo_init)
 
-    # wait for a while
-    time.sleep(0.6)
+    # wait for a while and inform it
+    time.sleep(1)
+    rospy.loginfo("position initialized!")
 
     # change servo control mode to drive mode and publish it
     multi_servo_init.control_mode = [8, 16]
-    multi_servo_init.target_torque=[0,0]
-    multi_servo_init.target_position_by_torque=[0,0]
+    multi_servo_init.target_torque = [0, 0]
+    multi_servo_init.target_position_by_torque = [0, 0]
     multi_servo_command_pub.publish(multi_servo_init)
 
-    # wait for a while
-    time.sleep(0.6)
+    # wait for a while and inform it
+    time.sleep(1)
+    rospy.loginfo("operation started!")
 
 
 # callback function to get informations of servos
@@ -110,9 +113,10 @@ if __name__ == '__main__':
     rospy.Subscriber('multi_servo_info', Multi_servo_info, callback_get_servo_info, queue_size=1)
     # rospy.Subscriber('joy', Joy, callback_generate_multi_command, queue_size=1)
     multi_servo_command_pub = rospy.Publisher('multi_servo_command',
-                                              Multi_servo_command, queue_size=1)
+                                              Multi_servo_command, queue_size=1, latch=True)
 
     # at first loop, set manipulator to initial status
+    time.sleep(2)
     manipulator_initialization()
     # if initial_process_flag == True:
     #     time.sleep(0.5)
