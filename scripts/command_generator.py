@@ -38,19 +38,38 @@ def callback_init(number):
 
 
 def manipulator_initialization():
-    global the_number_of_servo
+    global the_number_of_servo, servo_angle, servo_current
     multi_servo_init = Multi_servo_command()
 
-    # generate a command to initialize servo angle
-    multi_servo_init.control_mode = [0, 0]
-    multi_servo_init.target_position = [0, 0]
-    multi_servo_init.target_torque = [0, 0]
-    multi_servo_init.target_position_by_torque = [0, 0]
-    # publisht the command
+    # step 1 : set control mode of all servos to position control mode
+    multi_servo_init.control_mode = [8, 8]
     multi_servo_command_pub.publish(multi_servo_init)
 
     # wait for a while and inform it
+    time.sleep(0.2)
+
+    while servo_angle[0] < 0:
+        multi_servo_init.target_torque = [-100, 0]
+        multi_servo_command_pub.publish(multi_servo_init)
+        time.sleep(0.05)
+
+    while servo_angle[1] < 0:
+        multi_servo_init.target_torque = [0, -100]
+        multi_servo_command_pub.publish(multi_servo_init)
+        time.sleep(0.05)
+
+    multi_servo_init.target_torque = [0, 0]
+    multi_servo_command_pub.publish(multi_servo_init)
+    time.sleep(0.2)
+
+    multi_servo_init.control_mode = [0, 0]
+    multi_servo_command_pub.publish(multi_servo_init)
+    time.sleep(0.2)
+
+    multi_servo_init.target_position = [0, 0]
+    multi_servo_command_pub.publish(multi_servo_init)
     time.sleep(1)
+
     rospy.loginfo("position initialized!")
 
     # change servo control mode to drive mode and publish it
