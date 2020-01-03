@@ -17,6 +17,10 @@ servo_angle = [0] * 2
 servo_current = [0] * 2
 servo_encoder = [0] * 2
 
+# global parameters to calculate moving average
+SAMPLE_SIZE_MA = 5  # the number of sample to calculate average
+current_list = [0] * SAMPLE_SIZE_MA  # list to contain servo current
+
 
 # callback function called when the number of servos under control is informed
 def callback_init(number):
@@ -36,13 +40,13 @@ def manipulator_initialization():
     # wait for a while and inform it
     time.sleep(0.2)
 
-    while servo_angle[0] < 0:
-        multi_servo_init.target_torque = [-100, 0]
+    while servo_angle[0] < -1000:
+        multi_servo_init.target_torque = [-50, 0]
         multi_servo_command_pub.publish(multi_servo_init)
         time.sleep(0.05)
 
-    while servo_angle[1] < 0:
-        multi_servo_init.target_torque = [0, -100]
+    while servo_angle[1] < -1000:
+        multi_servo_init.target_torque = [0, -50]
         multi_servo_command_pub.publish(multi_servo_init)
         time.sleep(0.05)
 
@@ -87,6 +91,7 @@ def callback_get_servo_info(multi_servo_info):
 # function to control servos
 def control_manipulator(angle, current):
     global the_number_of_servo, servo_encoder
+    global SAMPLE_SIZE_MA, current_list
 
     # setup an instance to publish servo command
     multi_servo_command = Multi_servo_command()
@@ -94,7 +99,7 @@ def control_manipulator(angle, current):
     # parameters for motion
     angle_command_slave = 0
     torque_command_slave = 0
-    torque_gain = 10
+    torque_gain = 50
     current_dead_zone = 72
 
     # modify command value to avoid over current and other harmful motion
@@ -105,9 +110,15 @@ def control_manipulator(angle, current):
     else:
         angle_command_slave = angle[0]
 
-    if current[1] > current_dead_zone:
-        torque_command_slave = (current[1] - current_dead_zone) * torque_gain
-    if angle[1] < 0 or angle[1] > 9000 or angle[0] < 0 or angle[0] > 9000:
+    # calculate moving average of servo current
+    discard = current_list.pop(0)  # discard 1st component of the list
+    current_list.append(current[1])  # add latest servo current value to the list
+    current_ma = sum(current_list) / SAMPLE_SIZE_MA  # culculate moving average
+    print(current_list)
+
+    if current_ma > current_dead_zone:
+        torque_command_slave = (current_ma - current_dead_zone) * torque_gain
+    if angle[1] < -500 or angle[1] > 10000 or angle[0] < -500 or angle[0] > 10000:
         torque_command_slave = 0
 
     # store servo command into the instance of ROS message
