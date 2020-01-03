@@ -16,25 +16,12 @@ the_number_of_servo = 0
 servo_angle = [0] * 2
 servo_current = [0] * 2
 
-# global parameters for servo command
-target_position = []
-target_velocity = []
-target_torque = []
-target_position_by_torque = []
-
 
 # callback function called when the number of servos under control is informed
 def callback_init(number):
     global the_number_of_servo
     global servo_angle, servo_current
     the_number_of_servo = number.data  # get data
-
-    # prepare paramters for servo command
-    for i in range(the_number_of_servo):
-        target_position.append(0)
-        target_velocity.append(0)
-        target_torque.append(0)
-        target_position_by_torque.append(0)
 
 
 def manipulator_initialization():
@@ -137,10 +124,6 @@ if __name__ == '__main__':
     # at first loop, set manipulator to initial status
     time.sleep(2)
     manipulator_initialization()
-    # if initial_process_flag == True:
-    #     time.sleep(0.5)
-    #     manipulator_initialization()
-    #     initial_process_flag = False
 
     rate = rospy.Rate(100)
 
