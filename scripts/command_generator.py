@@ -4,7 +4,7 @@
 import serial
 import time
 import rospy
-from std_msgs.msg import Int16
+from std_msgs.msg import Int16, Bool
 from kondo_b3mservo_rosdriver.msg import Multi_servo_command
 from kondo_b3mservo_rosdriver.msg import Multi_servo_info
 
@@ -15,6 +15,7 @@ the_number_of_servo = 0
 # global parameters for servo info
 servo_angle = [0] * 2
 servo_current = [0] * 2
+servo_encoder = [0] * 2
 
 
 # callback function called when the number of servos under control is informed
@@ -64,6 +65,11 @@ def manipulator_initialization():
     multi_servo_init.target_torque = [0, 0]
     multi_servo_init.target_position_by_torque = [0, 0]
     multi_servo_command_pub.publish(multi_servo_init)
+    time.sleep(0.5)
+
+    # resert encoder of master and slave servo
+    encoder_reset_flag = True
+    resert_encoder_trigger_pub.publish(encoder_reset_flag)
 
     # wait for a while and inform it
     time.sleep(1)
@@ -72,14 +78,15 @@ def manipulator_initialization():
 
 # callback function to get informations of servos
 def callback_get_servo_info(multi_servo_info):
-    global servo_angle, servo_current
+    global servo_angle, servo_current, servo_encoder
     servo_angle = multi_servo_info.motor_position
     servo_current = multi_servo_info.motor_current
+    servo_encoder = multi_servo_info.encoder_count
 
 
 # function to control servos
 def control_manipulator(angle, current):
-    global the_number_of_servo
+    global the_number_of_servo, servo_encoder
 
     # setup an instance to publish servo command
     multi_servo_command = Multi_servo_command()
@@ -91,9 +98,9 @@ def control_manipulator(angle, current):
     current_dead_zone = 72
 
     # modify command value to avoid over current and other harmful motion
-    if angle[0] < 0:
+    if servo_encoder[0] < 0:
         angle_command_slave = 0
-    elif angle[0] > 9000:
+    elif servo_encoder[0] > 900:
         angle_command_slave = 9000
     else:
         angle_command_slave = angle[0]
@@ -120,6 +127,7 @@ if __name__ == '__main__':
     # rospy.Subscriber('joy', Joy, callback_generate_multi_command, queue_size=1)
     multi_servo_command_pub = rospy.Publisher('multi_servo_command',
                                               Multi_servo_command, queue_size=1, latch=True)
+    resert_encoder_trigger_pub = rospy.Publisher('encoder_reset_flag', Bool, queue_size=1)
 
     # at first loop, set manipulator to initial status
     time.sleep(2)
